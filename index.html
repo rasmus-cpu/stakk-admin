@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stakk Admin</title>
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600,700,800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+    :root {
+      --stakk-indigo-50:#EEECFB;--stakk-indigo-100:#D6D1F5;--stakk-indigo-200:#ADA4EC;
+      --stakk-indigo-300:#8476E2;--stakk-indigo-400:#5B48D8;--stakk-indigo-500:#3627C9;
+      --stakk-indigo-600:#2A1EA0;--stakk-indigo-700:#1F1677;
+      --stakk-ink:#222228;--stakk-ink-soft:#4A4A55;--stakk-graphite:#6C6C78;
+      --stakk-steel:#9696A3;--stakk-mist:#C8C8D1;--stakk-fog:#EDEDF4;
+      --stakk-paper:#F7F7FB;
+      --color-text:var(--stakk-ink);--color-text-muted:var(--stakk-graphite);
+      --color-text-subtle:var(--stakk-steel);
+      --font-sans:'Switzer','Switzer Variable',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+      --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+      --dur-fast:80ms;--dur-base:160ms;--ease-out:cubic-bezier(0.16,1,0.3,1);
+      --shadow-md:0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg:0 8px 30px rgba(0,0,0,0.14);
+      /* Admin tokens */
+      --admin-canvas:#F4F4F7;--admin-surface:#FFFFFF;--admin-surface-alt:#FAFAFC;
+      --admin-rail:#18181E;--admin-rail-soft:#26262E;
+      --admin-rail-text:#B5B5C0;--admin-rail-text-active:#FFFFFF;
+      --admin-border:#E6E6EC;--admin-border-strong:#D2D2DA;
+      --admin-row-hover:#F7F7FA;
+      --admin-row-prel:#FBF8FF;--admin-row-prel-border:#C8BFF0;
+      --admin-success-bg:#E4F4EB;--admin-success-fg:#156944;
+      --admin-warning-bg:#FBEBD3;--admin-warning-fg:#8C5400;
+      --admin-danger-bg:#FADAD3;--admin-danger-fg:#8C2412;
+      --admin-info-bg:#E8E5F8;--admin-info-fg:#2A1EA0;
+      --admin-neutral-bg:#ECECF0;--admin-neutral-fg:#4A4A55;
+      --admin-rail-w:240px;--admin-topbar-h:56px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body.admin{font-family:var(--font-sans);background:var(--admin-canvas);color:var(--color-text);-webkit-font-smoothing:antialiased;font-feature-settings:'ss01','cv11','tnum';}
+
+    /* Auth screen */
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--admin-canvas);}
+    #auth-screen form{background:var(--admin-surface);border:1px solid var(--admin-border);border-radius:10px;padding:36px;width:380px;box-shadow:var(--shadow-md);}
+    #auth-screen .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+    #auth-screen .auth-mark{width:32px;height:32px;background:var(--stakk-indigo-500);border-radius:7px;display:grid;place-items:center;color:#fff;font-family:var(--font-mono);font-size:14px;font-weight:700;}
+    #auth-screen h2{font-size:20px;font-weight:700;color:var(--color-text);}
+    #auth-screen label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;margin-top:20px;}
+    #auth-screen input{width:100%;padding:9px 12px;border:1px solid var(--admin-border);background:var(--admin-surface-alt);border-radius:6px;color:var(--color-text);font-size:14px;font-family:var(--font-mono);}
+    #auth-screen input:focus{outline:none;border-color:var(--stakk-indigo-500);background:#fff;}
+    #auth-screen button[type=submit]{width:100%;margin-top:20px;padding:10px;background:var(--stakk-ink);border:none;border-radius:6px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-sans);}
+    #auth-screen button[type=submit]:hover{background:#000;}
+    #auth-error{color:var(--admin-danger-fg);font-size:12px;margin-top:8px;}
+
+    /* Shell */
+    .admin-shell{display:grid;grid-template-columns:var(--admin-rail-w) 1fr;min-height:100vh;}
+    .admin-rail{background:var(--admin-rail);color:var(--admin-rail-text);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    .admin-rail__brand{display:flex;align-items:center;gap:10px;padding:18px 20px 14px;font-weight:700;font-size:16px;color:#fff;letter-spacing:-.01em;}
+    .admin-rail__brand-mark{width:28px;height:28px;background:var(--stakk-indigo-500);border-radius:6px;display:grid;place-items:center;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#fff;flex:0 0 28px;}
+    .admin-rail__brand-env{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:#6E6E78;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border:1px solid #2F2F3A;border-radius:4px;}
+    .admin-rail__nav{padding:8px 12px;display:flex;flex-direction:column;gap:1px;}
+    .admin-rail__section-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;color:#5E5E68;padding:14px 12px 6px;}
+    .admin-rail__item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:6px;color:var(--admin-rail-text);text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;border:0;background:transparent;text-align:left;width:100%;}
+    .admin-rail__item:hover{background:var(--admin-rail-soft);color:#fff;}
+    .admin-rail__item--active{background:var(--stakk-indigo-500);color:#fff;}
+    .admin-rail__item--active:hover{background:var(--stakk-indigo-500);}
+    .admin-rail__item-icon{width:16px;height:16px;display:grid;place-items:center;flex:0 0 16px;}
+    .admin-rail__sub{margin-left:28px;display:flex;flex-direction:column;gap:1px;padding:2px 0 6px;}
+    .admin-rail__sub-item{padding:6px 10px;font-size:13px;color:#8E8E98;border-radius:5px;cursor:pointer;border:0;background:transparent;text-align:left;width:100%;}
+    .admin-rail__sub-item:hover{color:#fff;}
+    .admin-rail__sub-item--active{color:#fff;background:var(--admin-rail-soft);}
+    .admin-rail__footer{margin-top:auto;padding:14px;border-top:1px solid #2A2A33;display:flex;align-items:center;gap:10px;font-size:12px;color:#8E8E98;}
+    .admin-rail__avatar{width:28px;height:28px;border-radius:999px;background:linear-gradient(135deg,#5B48D8,#36A478);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;flex:0 0 28px;}
+    .admin-topbar{height:var(--admin-topbar-h);background:var(--admin-surface);border-bottom:1px solid var(--admin-border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:30;}
+    .admin-topbar__crumbs{font-size:13px;color:var(--color-text-muted);display:flex;align-items:center;gap:6px;}
+    .admin-topbar__crumb-current{color:var(--color-text);font-weight:600;}
+    .admin-topbar__spacer{flex:1;}
+    .admin-topbar__search{position:relative;width:280px;}
+    .admin-topbar__search input{width:100%;height:32px;padding:0 12px 0 32px;border:1px solid var(--admin-border);background:var(--admin-surface-alt);border-radius:6px;font-size:13px;font-family:var(--font-sans);}
+    .admin-topbar__search input:focus{outline:none;border-color:var(--stakk-indigo-500);background:#fff;}
+    .admin-topbar__search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-muted);pointer-events:none;}
+    .admin-main{display:flex;flex-direction:column;min-width:0;}
+    .admin-page{padding:28px 32px 64px;max-width:1500px;width:100%;margin:0 auto;}
+    .admin-page__head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px;}
+    .admin-page__title{font-size:24px;font-weight:700;margin:0;letter-spacing:-.01em;}
+    .admin-page__subtitle{margin:4px 0 0;color:var(--color-text-muted);font-size:13px;}
+    /* KPI card */
+    .k-card{background:var(--admin-surface);border:1px solid var(--admin-border);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+    .k-card__label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted);font-weight:600;}
+    .k-card__value{font-family:var(--font-mono);font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--color-text);}
+    .k-card__sub{font-size:12px;color:var(--color-text-muted);}
+    /* Table */
+    .t-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
+    .t-table th{text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-muted);padding:10px 12px;background:var(--admin-surface-alt);border-bottom:1px solid var(--admin-border);border-top:1px solid var(--admin-border);white-space:nowrap;}
+    .t-table th:first-child{border-left:1px solid var(--admin-border);border-top-left-radius:6px;}
+    .t-table th:last-child{border-right:1px solid var(--admin-border);border-top-right-radius:6px;}
+    .t-table th.t-th--sortable{cursor:pointer;user-select:none;}
+    .t-table th.t-th--sortable:hover{color:var(--color-text);}
+    .t-table th .sort-ind{opacity:.5;margin-left:4px;font-family:var(--font-mono);font-size:10px;}
+    .t-table th .sort-ind--active{opacity:1;color:var(--stakk-indigo-500);}
+    .t-table td{padding:12px;border-bottom:1px solid var(--admin-border);background:var(--admin-surface);vertical-align:middle;}
+    .t-table tr:last-child td:first-child{border-bottom-left-radius:6px;}
+    .t-table tr:last-child td:last-child{border-bottom-right-radius:6px;}
+    .t-table td:first-child{border-left:1px solid var(--admin-border);}
+    .t-table td:last-child{border-right:1px solid var(--admin-border);}
+    .t-table tbody tr{cursor:pointer;}
+    .t-table tbody tr:hover td{background:var(--admin-row-hover);}
+    .t-table tbody tr.row--prel td{background:var(--admin-row-prel);}
+    .t-table tbody tr.row--prel td:first-child{box-shadow:inset 3px 0 0 var(--admin-row-prel-border);}
+    .t-table tbody tr.row--prel:hover td{background:#F4EEFE;}
+    .t-num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+    .t-mono-cell{font-family:var(--font-mono);font-size:12px;}
+    /* Pills */
+    .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.01em;}
+    .pill--success{background:var(--admin-success-bg);color:var(--admin-success-fg);}
+    .pill--warning{background:var(--admin-warning-bg);color:var(--admin-warning-fg);}
+    .pill--danger{background:var(--admin-danger-bg);color:var(--admin-danger-fg);}
+    .pill--info{background:var(--admin-info-bg);color:var(--admin-info-fg);}
+    .pill--neutral{background:var(--admin-neutral-bg);color:var(--admin-neutral-fg);}
+    .pill--outline{background:transparent;border:1px solid var(--admin-border-strong);color:var(--color-text);}
+    .pill--dot::before{content:"";width:6px;height:6px;border-radius:999px;background:currentColor;}
+    .pill--lg{font-size:12px;padding:4px 10px;}
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--admin-border-strong);background:var(--admin-surface);font-size:13px;font-weight:500;font-family:var(--font-sans);color:var(--color-text);cursor:pointer;transition:background var(--dur-fast);}
+    .btn:hover{background:var(--admin-row-hover);}
+    .btn--primary{background:var(--stakk-ink);color:#fff;border-color:var(--stakk-ink);}
+    .btn--primary:hover{background:#000;}
+    .btn--accent{background:var(--stakk-indigo-500);color:#fff;border-color:var(--stakk-indigo-500);}
+    .btn--accent:hover{background:var(--stakk-indigo-600);}
+    .btn--ghost{border-color:transparent;background:transparent;}
+    .btn--ghost:hover{background:var(--admin-row-hover);border-color:var(--admin-border);}
+    .btn--danger{color:var(--admin-danger-fg);border-color:var(--admin-border-strong);}
+    .btn--danger:hover{background:var(--admin-danger-bg);}
+    .btn--sm{height:26px;padding:0 9px;font-size:12px;}
+    .btn--icon{width:32px;padding:0;justify-content:center;}
+    /* Toolbar */
+    .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px;background:var(--admin-surface);border:1px solid var(--admin-border);border-radius:8px 8px 0 0;border-bottom:0;}
+    .input{height:32px;padding:0 10px;border:1px solid var(--admin-border);background:#fff;border-radius:6px;font-size:13px;font-family:var(--font-sans);min-width:0;}
+    .input:focus{outline:none;border-color:var(--stakk-indigo-500);}
+    .input--with-icon{padding-left:30px;}
+    .input-wrap{position:relative;display:inline-flex;}
+    .input-wrap > svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--color-text-muted);}
+    .select{height:32px;padding:0 28px 0 10px;border:1px solid var(--admin-border);background:#fff;border-radius:6px;font-size:13px;appearance:none;-webkit-appearance:none;font-family:var(--font-sans);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236C6C78' stroke-width='1.5'><polyline points='3 5 6 8 9 5'/></svg>");background-repeat:no-repeat;background-position:right 8px center;background-size:12px;}
+    .chip-toggle{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;font-size:12px;font-weight:500;border-radius:6px;border:1px solid var(--admin-border);background:#fff;cursor:pointer;color:var(--color-text-muted);}
+    .chip-toggle:hover{color:var(--color-text);}
+    .chip-toggle--on{background:var(--admin-info-bg);color:var(--admin-info-fg);border-color:var(--admin-info-fg);}
+    /* Drawer */
+    .drawer-overlay{position:fixed;inset:0;background:rgba(34,34,40,.42);z-index:100;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);}
+    .drawer-overlay--open{opacity:1;pointer-events:auto;}
+    .drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,92vw);background:var(--admin-surface);z-index:101;transform:translateX(100%);transition:transform var(--dur-base) var(--ease-out);display:flex;flex-direction:column;box-shadow:var(--shadow-lg);}
+    .drawer--open{transform:translateX(0);}
+    .drawer__head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--admin-border);}
+    .drawer__body{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:24px;}
+    .drawer__foot{padding:16px 24px;border-top:1px solid var(--admin-border);display:flex;justify-content:flex-end;gap:8px;background:var(--admin-surface-alt);}
+    /* Card */
+    .card{background:var(--admin-surface);border:1px solid var(--admin-border);border-radius:8px;overflow:hidden;}
+    .card__head{padding:14px 18px;border-bottom:1px solid var(--admin-border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .card__title{font-size:14px;font-weight:600;margin:0;}
+    .card__sub{font-size:12px;color:var(--color-text-muted);margin:0;}
+    .card__body{padding:18px;}
+    .card__body--flush{padding:0;}
+    .section-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--color-text-muted);}
+    /* DL */
+    .dl{display:grid;grid-template-columns:140px 1fr;gap:10px 16px;font-size:13px;}
+    .dl dt{color:var(--color-text-muted);font-size:12px;}
+    .dl dd{margin:0;color:var(--color-text);}
+    /* Pager */
+    .pager{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--admin-border);border-top:0;border-radius:0 0 8px 8px;background:var(--admin-surface);font-size:12px;color:var(--color-text-muted);}
+    .pager__nav{display:flex;gap:4px;align-items:center;}
+    .pager__btn{height:28px;min-width:28px;padding:0 8px;border:1px solid var(--admin-border);background:#fff;border-radius:5px;font-size:12px;font-family:var(--font-mono);cursor:pointer;color:var(--color-text);}
+    .pager__btn:hover:not(:disabled){background:var(--admin-row-hover);}
+    .pager__btn:disabled{opacity:.4;cursor:not-allowed;}
+    .pager__btn--current{background:var(--stakk-ink);color:#fff;border-color:var(--stakk-ink);}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(34,34,40,.5);z-index:200;display:grid;place-items:center;padding:24px;}
+    .modal{background:#fff;border-radius:10px;max-width:520px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;}
+    .modal__head{padding:18px 22px;border-bottom:1px solid var(--admin-border);}
+    .modal__title{margin:0;font-size:16px;font-weight:600;}
+    .modal__sub{margin:4px 0 0;font-size:12px;color:var(--color-text-muted);}
+    .modal__body{padding:22px;font-size:13px;display:flex;flex-direction:column;gap:14px;}
+    .modal__foot{padding:14px 22px;border-top:1px solid var(--admin-border);display:flex;gap:8px;justify-content:flex-end;background:var(--admin-surface-alt);}
+    /* Tabs */
+    .tabs{display:flex;gap:0;border-bottom:1px solid var(--admin-border);margin-bottom:20px;}
+    .tabs__tab{background:transparent;border:0;padding:10px 16px;font-size:13px;font-weight:500;color:var(--color-text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+    .tabs__tab:hover{color:var(--color-text);}
+    .tabs__tab--active{color:var(--color-text);border-bottom-color:var(--stakk-indigo-500);font-weight:600;}
+    /* Misc */
+    .spark{display:block;width:100%;height:28px;}
+    .row-actions{display:flex;gap:6px;align-items:center;}
+    .muted{color:var(--color-text-muted);}
+    .empty-state{padding:48px 24px;text-align:center;color:var(--color-text-muted);font-size:13px;}
+    .divider{height:1px;background:var(--admin-border);margin:0;}
+    .stack-sm{display:flex;flex-direction:column;gap:8px;}
+    .stack-md{display:flex;flex-direction:column;gap:16px;}
+    .stack-lg{display:flex;flex-direction:column;gap:24px;}
+    .row{display:flex;align-items:center;gap:8px;}
+    .row-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .dot-status{width:8px;height:8px;border-radius:999px;display:inline-block;flex:0 0 8px;}
+    .dot-status--ok{background:var(--admin-success-fg);}
+    .dot-status--warn{background:var(--admin-warning-fg);}
+    .dot-status--err{background:var(--admin-danger-fg);}
+    .table-wrap{overflow:auto;border:1px solid var(--admin-border);border-top:0;background:var(--admin-surface);}
+    /* Loading spinner */
+    .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--admin-border);border-top-color:var(--stakk-indigo-500);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .page-loading{padding:48px 24px;text-align:center;color:var(--color-text-muted);}
+    /* Progress bar */
+    .progress-bar-wrap{height:6px;background:var(--admin-border);border-radius:999px;overflow:hidden;}
+    .progress-bar-fill{height:100%;background:var(--stakk-indigo-500);border-radius:999px;transition:width .2s;}
+  </style>
+</head>
+<body class="admin">
+
+<!-- Auth screen -->
+<div id="auth-screen">
+  <form id="auth-form">
+    <div class="auth-logo">
+      <div class="auth-mark">S</div>
+      <h2>Stakk Admin</h2>
+    </div>
+    <label for="auth-username">Användarnamn</label>
+    <input type="text" id="auth-username" placeholder="stakk" autocomplete="username" />
+    <label for="auth-password">Lösenord</label>
+    <input type="password" id="auth-password" placeholder="••••••••••••••••" autocomplete="current-password" />
+    <button type="submit">Logga in</button>
+    <div id="auth-error"></div>
+  </form>
+</div>
+
+<div id="root"></div>
+
+<script>
+  window.__adminKey = localStorage.getItem('stakk_admin_key') || '';
+  if (window.__adminKey) {
+    document.getElementById('auth-screen').style.display = 'none';
+  }
+  document.getElementById('auth-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const username = document.getElementById('auth-username').value.trim().toLowerCase();
+    const password = document.getElementById('auth-password').value.trim();
+    const errEl = document.getElementById('auth-error');
+    errEl.textContent = '';
+    if (!username || !password) return;
+    if (username !== 'stakk') { errEl.textContent = 'Ogiltigt användarnamn eller lösenord.'; return; }
+    try {
+      const r = await fetch('https://stakk-orders-api-production.up.railway.app/v1/admin/audit?limit=1', { headers: { Authorization: 'Bearer ' + password } });
+      if (r.status === 401 || r.status === 403 || r.status === 503) { errEl.textContent = 'Ogiltigt användarnamn eller lösenord.'; return; }
+      window.__adminKey = password;
+      localStorage.setItem('stakk_admin_key', password);
+      document.getElementById('auth-screen').style.display = 'none';
+      if (window.__bootReact) window.__bootReact();
+    } catch(err) { errEl.textContent = 'Anslutningsfel. Försök igen.'; }
+  });
+</script>
+
+<script src="/js/react.min.js" crossorigin="anonymous"></script>
+<script src="/js/react-dom.min.js" crossorigin="anonymous"></script>
+<script src="/js/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ── API helper ── */
+const API_BASE = 'https://stakk-orders-api-production.up.railway.app';
+function apiFetch(path, opts = {}) {
+  return fetch(API_BASE + path, {
+    ...opts,
+    headers: { Authorization: 'Bearer ' + window.__adminKey, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  }).then(r => {
+    if (!r.ok) return r.json().catch(() => ({})).then(b => { throw Object.assign(new Error(b.error || `HTTP ${r.status}`), { status: r.status }); });
+    return r.json();
+  });
+}
+
+/* ── Format helpers ── */
+const fmtSek = v => new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(v || 0);
+const fmtInt = v => new Intl.NumberFormat('sv-SE').format(v || 0);
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : ''));
+  return d.toLocaleDateString('sv-SE');
+}
+function fmtDateShort(iso) {
+  if (!iso) return '—';
+  const [, m, d] = iso.slice(0,10).split('-');
+  return `${d}/${m}`;
+}
+const WEEKDAYS = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+function weekday(iso) { if (!iso) return ''; return WEEKDAYS[new Date(iso + 'T12:00:00').getDay()]; }
+function daysFromNow(iso) { if (!iso) return null; return Math.round((new Date(iso + 'T12:00:00') - new Date()) / 86400000); }
+function fulfillmentLabel(s, isPrel, cancelledAt) {
+  if (cancelledAt) return { label: 'Avbruten', tone: 'danger' };
+  if (!s) return { label: '—', tone: 'neutral' };
+  const map = { fulfilled: ['Levererad','success'], partial: ['Delvis','info'], unfulfilled: ['Ej levererad','warning'] };
+  const [label, tone] = map[s.toLowerCase()] || [s, 'neutral'];
+  if (isPrel) return { label, tone, isPrel: true };
+  return { label, tone };
+}
+function financialLabel(s) {
+  if (!s) return { label: '—', tone: 'neutral' };
+  const map = { paid: ['Betald','success'], pending: ['Väntar','warning'], overdue: ['Förfallen','danger'], refunded: ['Återbetald','neutral'] };
+  const [label, tone] = map[s.toLowerCase()] || [s, 'neutral'];
+  return { label, tone };
+}
+
+/* ── Icons ── */
+function Icon({ d, size = 16 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flex:'0 0 auto' }}><path d={d} /></svg>;
+}
+const I = {
+  dashboard: <Icon d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 9h8V3h-8z" />,
+  orders:    <Icon d="M3 7h18M3 12h18M3 17h18" />,
+  clients:   <Icon d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M13 7a4 4 0 11-8 0 4 4 0 018 0M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />,
+  reports:   <Icon d="M3 3v18h18M7 14l4-4 4 4 5-5" />,
+  audit:     <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h6M9 9h1" />,
+  sync:      <Icon d="M21 12a9 9 0 11-3-6.7M21 3v6h-6" />,
+  search:    <Icon d="M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35" size={14} />,
+  chev:      <Icon d="M9 6l6 6-6 6" />,
+  close:     <Icon d="M18 6L6 18M6 6l12 12" />,
+  plus:      <Icon d="M12 5v14M5 12h14" />,
+  download:  <Icon d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />,
+  external:  <Icon d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" size={12} />,
+  copy:      <Icon d="M20 9h-9a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-9a2 2 0 00-2-2zM5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" size={14} />,
+  trash:     <Icon d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" size={14} />,
+  warning:   <Icon d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" />,
+  check:     <Icon d="M20 6L9 17l-5-5" />,
+};
+
+/* ── Pill ── */
+function Pill({ tone = 'neutral', dot = false, outline = false, lg = false, style, children }) {
+  const cls = ['pill', `pill--${tone}`, dot && 'pill--dot', outline && 'pill--outline', lg && 'pill--lg'].filter(Boolean).join(' ');
+  return <span className={cls} style={style}>{children}</span>;
+}
+
+/* ── Sparkline ── */
+function Sparkline({ values = [], color = 'var(--stakk-indigo-500)', fill = 'rgba(54,39,201,0.10)' }) {
+  if (!values.length) return null;
+  const max = Math.max(...values, 1), min = Math.min(...values, 0), W = 100, H = 28;
+  const range = max - min || 1;
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * W, H - 2 - ((v - min) / range) * (H - 4)]);
+  const path = pts.map(([x,y],i) => `${i===0?'M':'L'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  return <svg className="spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+    <path d={`${path} L${W} ${H} L0 ${H} Z`} fill={fill} stroke="none" />
+    <path d={path} fill="none" stroke={color} strokeWidth="1.5" />
+  </svg>;
+}
+
+/* ── KCard ── */
+function KCard({ label, value, sub, spark }) {
+  return <div className="k-card">
+    <div className="k-card__label">{label}</div>
+    <div className="k-card__value">{value}</div>
+    {sub && <div className="k-card__sub">{sub}</div>}
+    {spark && <Sparkline values={spark} />}
+  </div>;
+}
+
+/* ── Drawer ── */
+function Drawer({ open, onClose, title, subtitle, children, footer }) {
+  useEffect(() => {
+    const fn = e => { if (e.key === 'Escape') onClose(); };
+    if (open) document.addEventListener('keydown', fn);
+    return () => document.removeEventListener('keydown', fn);
+  }, [open]);
+  return <>
+    <div className={`drawer-overlay ${open ? 'drawer-overlay--open' : ''}`} onClick={onClose} />
+    <div className={`drawer ${open ? 'drawer--open' : ''}`} role="dialog">
+      <div className="drawer__head">
+        <div>
+          <h3 style={{ margin:0, fontSize:16, fontWeight:600 }}>{title}</h3>
+          {subtitle && <p style={{ margin:'2px 0 0', fontSize:12, color:'var(--color-text-muted)' }}>{subtitle}</p>}
+        </div>
+        <button className="btn btn--icon btn--ghost" onClick={onClose}>{I.close}</button>
+      </div>
+      <div className="drawer__body">{children}</div>
+      {footer && <div className="drawer__foot">{footer}</div>}
+    </div>
+  </>;
+}
+
+/* ── Modal ── */
+function Modal({ open, onClose, title, subtitle, children, footer, width = 520 }) {
+  if (!open) return null;
+  return <div className="modal-overlay" onClick={onClose}>
+    <div className="modal" style={{ maxWidth: width }} onClick={e => e.stopPropagation()}>
+      <div className="modal__head">
+        <h3 className="modal__title">{title}</h3>
+        {subtitle && <p className="modal__sub">{subtitle}</p>}
+      </div>
+      <div className="modal__body">{children}</div>
+      {footer && <div className="modal__foot">{footer}</div>}
+    </div>
+  </div>;
+}
+
+/* ── Tabs ── */
+function Tabs({ tabs, value, onChange }) {
+  return <div className="tabs">
+    {tabs.map(t => <button key={t.id} className={`tabs__tab ${t.id === value ? 'tabs__tab--active' : ''}`} onClick={() => onChange(t.id)}>{t.label}</button>)}
+  </div>;
+}
+
+/* ── Pager ── */
+function Pager({ page, pages, total, perPage, onPage }) {
+  const start = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const end = Math.min(page * perPage, total);
+  let from = Math.max(1, page - 2), to = Math.min(pages, from + 4);
+  from = Math.max(1, to - 4);
+  const nums = [];
+  for (let i = from; i <= to; i++) nums.push(i);
+  return <div className="pager">
+    <div>Visar <strong style={{ color:'var(--color-text)' }}>{fmtInt(start)}–{fmtInt(end)}</strong> av {fmtInt(total)}</div>
+    <div className="pager__nav">
+      <button className="pager__btn" onClick={() => onPage(1)} disabled={page===1}>«</button>
+      <button className="pager__btn" onClick={() => onPage(page-1)} disabled={page===1}>‹</button>
+      {from > 1 && <span style={{ padding:'0 4px' }}>…</span>}
+      {nums.map(n => <button key={n} className={`pager__btn ${n===page?'pager__btn--current':''}`} onClick={() => onPage(n)}>{n}</button>)}
+      {to < pages && <span style={{ padding:'0 4px' }}>…</span>}
+      <button className="pager__btn" onClick={() => onPage(page+1)} disabled={page===pages}>›</button>
+      <button className="pager__btn" onClick={() => onPage(pages)} disabled={page===pages}>»</button>
+    </div>
+  </div>;
+}
+
+/* ── Sort hook ── */
+function useSort(initialKey, initialDir = 'desc') {
+  const [sort, setSort] = useState({ key: initialKey, dir: initialDir });
+  const toggle = key => setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' });
+  return [sort, toggle];
+}
+function SortableTh({ label, sortKey, sort, onSort, align = 'left', style }) {
+  const active = sort.key === sortKey;
+  return <th className="t-th--sortable" onClick={() => onSort(sortKey)} style={{ textAlign: align, ...(style||{}) }}>
+    {label}<span className={`sort-ind ${active ? 'sort-ind--active' : ''}`}>{active ? (sort.dir === 'asc' ? '↑' : '↓') : '↕'}</span>
+  </th>;
+}
+
+/* ── Rail ── */
+function Rail({ route, onNavigate }) {
+  const topItems = [
+    { id: 'dashboard', label: 'Översikt', icon: I.dashboard },
+    { id: 'orders', label: 'Ordrar', icon: I.orders },
+    { id: 'clients', label: 'Kunder', icon: I.clients },
+  ];
+  const subReports = [
+    { id: 'reports/sales', label: 'Försäljning' },
+    { id: 'reports/inventory', label: 'Lager' },
+    { id: 'reports/skus', label: 'SKU-prestanda' },
+  ];
+  const bottomItems = [{ id: 'audit', label: 'Audit Log', icon: I.audit }];
+  const inReports = route.startsWith('reports');
+  return <aside className="admin-rail">
+    <div className="admin-rail__brand">
+      <span className="admin-rail__brand-mark">S</span>
+      <span>Stakk</span>
+      <span className="admin-rail__brand-env">Admin</span>
+    </div>
+    <nav className="admin-rail__nav">
+      <div className="admin-rail__section-label">Operations</div>
+      {topItems.map(it => <button key={it.id} className={`admin-rail__item ${route === it.id ? 'admin-rail__item--active' : ''}`} onClick={() => onNavigate(it.id)}>
+        <span className="admin-rail__item-icon">{it.icon}</span>{it.label}
+      </button>)}
+      <button className={`admin-rail__item ${inReports && !subReports.some(r => r.id === route) ? 'admin-rail__item--active' : inReports ? '' : ''}`} onClick={() => onNavigate('reports/sales')}>
+        <span className="admin-rail__item-icon">{I.reports}</span>Rapporter
+      </button>
+      {inReports && <div className="admin-rail__sub">
+        {subReports.map(it => <button key={it.id} className={`admin-rail__sub-item ${route === it.id ? 'admin-rail__sub-item--active' : ''}`} onClick={() => onNavigate(it.id)}>{it.label}</button>)}
+      </div>}
+      <div className="admin-rail__section-label">System</div>
+      {bottomItems.map(it => <button key={it.id} className={`admin-rail__item ${route === it.id ? 'admin-rail__item--active' : ''}`} onClick={() => onNavigate(it.id)}>
+        <span className="admin-rail__item-icon">{it.icon}</span>{it.label}
+      </button>)}
+    </nav>
+    <div className="admin-rail__footer">
+      <div className="admin-rail__avatar">S</div>
+      <div>
+        <div style={{ color:'#fff', fontWeight:600, fontSize:12 }}>Stakk Admin</div>
+        <div style={{ cursor:'pointer' }} onClick={() => { localStorage.removeItem('stakk_admin_key'); location.reload(); }}>Logga ut</div>
+      </div>
+    </div>
+  </aside>;
+}
+
+/* ── TopBar ── */
+function TopBar({ crumbs, onSync }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const fn = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+  return <header className="admin-topbar">
+    <div className="admin-topbar__crumbs">
+      {crumbs.map((c, i) => <React.Fragment key={i}>
+        {i > 0 && <span style={{ opacity:.5 }}>/</span>}
+        <span className={i === crumbs.length-1 ? 'admin-topbar__crumb-current' : ''}>{c}</span>
+      </React.Fragment>)}
+    </div>
+    <div className="admin-topbar__spacer" />
+    <div ref={ref} style={{ position:'relative' }}>
+      <button className="btn" onClick={() => setOpen(o => !o)}>
+        {I.sync}<span>Synk</span><span style={{ opacity:.5, fontSize:10 }}>▾</span>
+      </button>
+      {open && <div style={{ position:'absolute', top:'calc(100% + 6px)', right:0, background:'#fff', border:'1px solid var(--admin-border)', borderRadius:8, boxShadow:'var(--shadow-md)', minWidth:240, zIndex:50, padding:6 }}>
+        {[['order','Synka Fortnox-order…','Trigga sync för en specifik order'],
+          ['inventory','Synka Ongoing-lager','Pulla färsk WMS-snapshot'],
+          ['orders','Synka Shopify-ordrar','Inkrementell ordercache-sync']].map(([id,label,sub]) => <button key={id}
+          onClick={() => { setOpen(false); onSync(id); }}
+          style={{ display:'block', width:'100%', textAlign:'left', border:0, background:'transparent', padding:'8px 10px', borderRadius:5, cursor:'pointer', fontFamily:'var(--font-sans)' }}
+          onMouseEnter={e => e.currentTarget.style.background='var(--admin-row-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+          <div style={{ fontSize:13, fontWeight:500 }}>{label}</div>
+          <div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{sub}</div>
+        </button>)}
+      </div>}
+    </div>
+  </header>;
+}
+
+/* ── Dashboard ── */
+function DashboardPage({ onNavigate, onOpenOrder }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [expanded, setExpanded] = useState(null);
+  useEffect(() => {
+    apiFetch('/v1/admin/dashboard').then(d => { setData(d); setExpanded(d.upcomingDeliveries[0]?.deliveryDate || null); }).catch(e => setErr(e.message));
+  }, []);
+  if (err) return <div className="admin-page"><div style={{ padding:40, color:'var(--admin-danger-fg)' }}>{err}</div></div>;
+  if (!data) return <div className="admin-page"><div className="page-loading"><span className="spinner" /></div></div>;
+  const s = data.summary;
+  return <div className="admin-page">
+    <div className="admin-page__head">
+      <div><h1 className="admin-page__title">Översikt</h1><p className="admin-page__subtitle">Stakk Operations · {new Date().toLocaleDateString('sv-SE')}</p></div>
+      <div className="row" style={{ gap:8 }}>
+        <button className="btn" onClick={() => onNavigate('reports/sales')}>{I.reports}<span>Försäljningsrapport</span></button>
+        <button className="btn btn--primary" onClick={() => onNavigate('orders')}>{I.orders}<span>Alla ordrar</span></button>
+      </div>
+    </div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:24 }}>
+      <KCard label="Ordrar (totalt)" value={fmtInt(s.totalOrders)} sub={`${fmtSek(s.totalRevenueSek)} omsättning`} />
+      <KCard label="Den här månaden" value={fmtInt(s.ordersThisMonth)} sub={fmtSek(s.revenueThisMonth)} />
+      <KCard label="Denna vecka" value={fmtInt(s.ordersThisWeek)} sub="inkomna ordrar" />
+      <KCard label="Kommande leveranser" value={fmtInt(s.upcomingDeliveries)} sub={<span><strong>{s.confirmedUpcoming}</strong> bekräftade · <span style={{ color:'var(--admin-info-fg)' }}>{s.preliminaryUpcoming} prel</span></span>} />
+    </div>
+    {/* Upcoming */}
+    <div className="card" style={{ marginBottom:24 }}>
+      <div className="card__head">
+        <div><h2 className="card__title">Kommande leveranser</h2><p className="card__sub">Närmsta 30 dagar · grupperade per datum</p></div>
+        <div className="row" style={{ gap:6 }}>
+          <Pill tone="info" outline>{s.preliminaryUpcoming} prel</Pill>
+          <Pill tone="warning" outline>{s.confirmedUpcoming} bekräftade</Pill>
+        </div>
+      </div>
+      <div className="card__body card__body--flush">
+        {data.upcomingDeliveries.length === 0 ? <div className="empty-state">Inga kommande leveranser.</div> :
+        data.upcomingDeliveries.map((g, idx) => {
+          const isOpen = expanded === g.deliveryDate;
+          const diff = daysFromNow(g.deliveryDate);
+          return <div key={g.deliveryDate} style={{ borderTop: idx === 0 ? 0 : '1px solid var(--admin-border)' }}>
+            <button onClick={() => setExpanded(isOpen ? null : g.deliveryDate)} style={{ display:'grid', gridTemplateColumns:'84px 1fr auto auto', alignItems:'center', gap:16, width:'100%', padding:'14px 18px', border:0, background: isOpen ? 'var(--admin-surface-alt)' : 'transparent', cursor:'pointer', textAlign:'left' }}>
+              <div>
+                <div style={{ fontSize:11, color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'.06em', fontWeight:600 }}>{weekday(g.deliveryDate)}</div>
+                <div style={{ fontFamily:'var(--font-mono)', fontSize:18, fontWeight:600, lineHeight:1.1 }}>{fmtDateShort(g.deliveryDate)}</div>
+                <div style={{ fontSize:11, color:'var(--color-text-muted)' }}>{diff === 0 ? 'Idag' : diff === 1 ? 'Imorgon' : `om ${diff} dgr`}</div>
+              </div>
+              <div>
+                <div style={{ fontSize:14, fontWeight:600 }}>{g.totalOrders} {g.totalOrders === 1 ? 'order' : 'ordrar'}</div>
+                <div style={{ fontSize:12, color:'var(--color-text-muted)' }}>{[...new Set(g.orders.map(o => o.clientName || o.emailDomain))].slice(0,3).join(' · ')}</div>
+              </div>
+              <div className="t-num" style={{ fontSize:14, fontWeight:600 }}>{fmtSek(g.totalRevenueSek)}</div>
+              <div className="row" style={{ gap:6 }}>
+                {g.preliminaryOrders > 0 && <Pill tone="info" outline style={{ borderColor:'var(--admin-row-prel-border)' }}>{g.preliminaryOrders} prel</Pill>}
+                <span style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0)', transition:'transform .12s', display:'inline-flex' }}>{I.chev}</span>
+              </div>
+            </button>
+            {isOpen && <div style={{ background:'var(--admin-surface-alt)', padding:'0 18px 16px 102px' }}>
+              <table className="t-table"><thead><tr><th>Order</th><th>Kund</th><th>PO</th><th>Status</th></tr></thead>
+              <tbody>{g.orders.map(o => {
+                const ff = fulfillmentLabel(o.fulfillmentStatus, o.isPreliminary, null);
+                return <tr key={o.shopifyId} onClick={() => onOpenOrder(o.shopifyId)} className={o.isPreliminary ? 'row--prel' : ''}>
+                  <td className="t-mono-cell" style={{ fontWeight:600 }}>{o.shopifyName}</td>
+                  <td>{o.clientName || o.emailDomain}</td>
+                  <td className="t-mono-cell muted">{o.poNumber || '—'}</td>
+                  <td><div className="row" style={{ gap:6 }}>
+                    <Pill tone={ff.tone} dot>{ff.label}</Pill>
+                    {o.isPreliminary && <Pill tone="info" outline style={{ borderColor:'var(--admin-row-prel-border)', color:'var(--admin-info-fg)' }}>Prel</Pill>}
+                  </div></td>
+                </tr>;
+              })}</tbody></table>
+            </div>}
+          </div>;
+        })}
+      </div>
+    </div>
+    {/* By client + recent */}
+    <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:24 }}>
+      <div className="card">
+        <div className="card__head"><div><h2 className="card__title">Per kund</h2><p className="card__sub">Sorterad efter omsättning</p></div>
+          <button className="btn btn--sm" onClick={() => onNavigate('clients')}>Hantera kunder</button>
+        </div>
+        <div className="card__body card__body--flush"><table className="t-table"><thead><tr>
+          <th>Kund</th><th>Domän</th><th style={{ textAlign:'right' }}>Ordrar</th>
+          <th style={{ textAlign:'right' }}>Omsättning</th><th>Nästa lev.</th><th>Prel</th>
+        </tr></thead><tbody>
+          {data.byClient.map(c => <tr key={c.emailDomain} onClick={() => onNavigate('clients')}>
+            <td><span style={{ fontWeight:600 }}>{c.clientName || '—'}</span></td>
+            <td className="t-mono-cell muted">{c.emailDomain}</td>
+            <td className="t-num">{fmtInt(c.orderCount)}</td>
+            <td className="t-num" style={{ fontWeight:600 }}>{fmtSek(c.revenueSek)}</td>
+            <td className="t-mono-cell">{c.nextDelivery ? fmtDateShort(c.nextDelivery) : <span className="muted">—</span>}</td>
+            <td className="t-num">{c.preliminaryCount > 0 ? <Pill tone="info" outline style={{ borderColor:'var(--admin-row-prel-border)' }}>{c.preliminaryCount}</Pill> : <span className="muted">0</span>}</td>
+          </tr>)}
+        </tbody></table></div>
+      </div>
+      <div className="card">
+        <div className="card__head"><div><h2 className="card__title">Senaste ordrar</h2><p className="card__sub">10 senaste skapade</p></div>
+          <button className="btn btn--sm" onClick={() => onNavigate('orders')}>Visa alla</button>
+        </div>
+        <div className="card__body card__body--flush"><table className="t-table"><thead><tr>
+          <th>Order</th><th>Kund</th><th>Leverans</th><th>Status</th>
+        </tr></thead><tbody>
+          {data.recentOrders.map(o => {
+            const ff = fulfillmentLabel(o.fulfillmentStatus, o.isPreliminary, o.cancelledAt);
+            return <tr key={o.shopifyId} onClick={() => onOpenOrder(o.shopifyId)} className={o.isPreliminary ? 'row--prel' : ''}>
+              <td className="t-mono-cell" style={{ fontWeight:600 }}>{o.shopifyName}</td>
+              <td>{o.clientName || o.emailDomain}</td>
+              <td className="t-mono-cell">{fmtDateShort(o.deliveryDate)}</td>
+              <td><Pill tone={ff.tone} dot>{ff.label}</Pill></td>
+            </tr>;
+          })}
+        </tbody></table></div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Order detail drawer ── */
+function OrderDetailDrawer({ shopifyId, open, onClose }) {
+  const [order, setOrder] = useState(null);
+  useEffect(() => {
+    if (!open || !shopifyId) return;
+    setOrder(null);
+    // fetch single order via orders list with shopify_id filter isn't supported,
+    // so we get it from the dashboard recent or pass the data through
+    // For now, just show available metadata from the orders list
+  }, [open, shopifyId]);
+  return <Drawer open={open} onClose={onClose} title={<span style={{ fontFamily:'var(--font-mono)' }}>{shopifyId}</span>} subtitle="Order detaljer">
+    <div className="empty-state">Detaljvy ej tillgänglig i denna version — öppna i Shopify för fullständig information.</div>
+    <div className="row" style={{ gap:8 }}>
+      <a href={`https://admin.shopify.com/store/stakk-ab/orders/${shopifyId}`} target="_blank" rel="noreferrer" className="btn">{I.external}<span>Öppna i Shopify</span></a>
+    </div>
+  </Drawer>;
+}
+
+/* ── Orders page ── */
+function OrdersPage() {
+  const PER_PAGE = 50;
+  const [q, setQ] = useState('');
+  const [domain, setDomain] = useState('all');
+  const [status, setStatus] = useState('open');
+  const [delivFrom, setDelivFrom] = useState('');
+  const [delivTo, setDelivTo] = useState('');
+  const [prelOnly, setPrelOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [sort, toggleSort] = useSort('createdAt', 'desc');
+
+  useEffect(() => { apiFetch('/v1/admin/clients').then(r => setClients(r)).catch(() => {}); }, []);
+
+  const load = useCallback((resetPage = false) => {
+    const pg = resetPage ? 1 : page;
+    if (resetPage) setPage(1);
+    setLoading(true); setErr(null);
+    const params = new URLSearchParams({ limit: PER_PAGE, offset: (pg-1)*PER_PAGE, status });
+    if (q.trim()) params.set('search', q.trim());
+    if (domain !== 'all') params.set('domain', domain);
+    if (delivFrom) params.set('delivery_from', delivFrom);
+    if (delivTo) params.set('delivery_to', delivTo);
+    if (prelOnly) params.set('preliminary', 'true');
+    apiFetch('/v1/admin/orders?' + params).then(d => setData(d)).catch(e => setErr(e.message)).finally(() => setLoading(false));
+  }, [page, q, domain, status, delivFrom, delivTo, prelOnly]);
+
+  useEffect(() => { load(true); }, [q, domain, status, delivFrom, delivTo, prelOnly]);
+  useEffect(() => { load(false); }, [page]);
+
+  const clearFilters = () => { setQ(''); setDomain('all'); setStatus('open'); setDelivFrom(''); setDelivTo(''); setPrelOnly(false); };
+  const isFiltered = q || domain !== 'all' || status !== 'open' || delivFrom || delivTo || prelOnly;
+  const pages = data ? Math.max(1, Math.ceil(data.total / PER_PAGE)) : 1;
+
+  return <div className="admin-page">
+    <div className="admin-page__head">
+      <div><h1 className="admin-page__title">Ordrar</h1>
+        <p className="admin-page__subtitle">{data ? `${fmtInt(data.total)} ordrar matchar filter` : 'Laddar…'}</p>
+      </div>
+    </div>
+    <div className="toolbar">
+      <div className="input-wrap" style={{ flex:'1 1 240px', maxWidth:320 }}>
+        {I.search}
+        <input className="input input--with-icon" placeholder="Sök ordernr, PO, e-post, kund…" value={q} onChange={e => setQ(e.target.value)} style={{ width:'100%' }} />
+      </div>
+      <select className="select" value={domain} onChange={e => setDomain(e.target.value)}>
+        <option value="all">Alla kunder</option>
+        {clients.map(c => <option key={c.id} value={c.emailDomain}>{c.name}</option>)}
+      </select>
+      <select className="select" value={status} onChange={e => setStatus(e.target.value)}>
+        <option value="all">Alla statusar</option>
+        <option value="open">Aktiva</option>
+        <option value="cancelled">Avbrutna</option>
+      </select>
+      <div className="row" style={{ gap:4 }}>
+        <span style={{ fontSize:11, color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'.06em' }}>Lev.</span>
+        <input className="input" type="date" value={delivFrom} onChange={e => setDelivFrom(e.target.value)} style={{ width:130 }} />
+        <span className="muted">–</span>
+        <input className="input" type="date" value={delivTo} onChange={e => setDelivTo(e.target.value)} style={{ width:130 }} />
+      </div>
+      <button className={`chip-toggle ${prelOnly ? 'chip-toggle--on' : ''}`} onClick={() => setPrelOnly(p => !p)}>
+        <span style={{ width:6, height:6, background:'var(--admin-row-prel-border)', borderRadius:999, display:'inline-block' }} />
+        Preliminär
+      </button>
+      {isFiltered && <button className="btn btn--ghost btn--sm" onClick={clearFilters}>Rensa filter</button>}
+    </div>
+    <div className="table-wrap">
+      {loading ? <div className="page-loading"><span className="spinner" /></div> :
+      err ? <div style={{ padding:20, color:'var(--admin-danger-fg)' }}>{err}</div> :
+      <table className="t-table" style={{ borderRadius:0 }}>
+        <thead><tr>
+          <SortableTh label="Order" sortKey="shopifyName" sort={sort} onSort={toggleSort} />
+          <th>Kund</th>
+          <th>PO</th>
+          <th>E-post</th>
+          <SortableTh label="Leverans" sortKey="deliveryDate" sort={sort} onSort={toggleSort} />
+          <th>Fulfillment</th>
+          <th>Betalning</th>
+          <th>Prel</th>
+          <SortableTh label="Skapad" sortKey="createdAt" sort={sort} onSort={toggleSort} />
+        </tr></thead>
+        <tbody>
+          {!data || data.orders.length === 0 ? <tr><td colSpan={9} className="empty-state">Inga ordrar matchar filtret.</td></tr> :
+          data.orders.map(o => {
+            const ff = fulfillmentLabel(o.fulfillmentStatus, o.isPreliminary, o.cancelledAt);
+            const fin = financialLabel(o.financialStatus);
+            return <tr key={o.shopifyId} onClick={() => setOpenId(o.shopifyId)} className={o.isPreliminary ? 'row--prel' : ''}>
+              <td className="t-mono-cell" style={{ fontWeight:600 }}>{o.shopifyName}</td>
+              <td>{o.clientName || o.emailDomain}</td>
+              <td className="t-mono-cell muted">{o.poNumber || '—'}</td>
+              <td className="t-mono-cell muted" style={{ maxWidth:160, overflow:'hidden', textOverflow:'ellipsis' }}>{o.emailDomain}</td>
+              <td className="t-mono-cell">{o.deliveryDate ? <span>{fmtDateShort(o.deliveryDate)} <span className="muted">{weekday(o.deliveryDate)}</span></span> : <span className="muted">—</span>}</td>
+              <td><Pill tone={ff.tone} dot>{ff.label}</Pill></td>
+              <td><Pill tone={fin.tone}>{fin.label}</Pill></td>
+              <td>{o.isPreliminary ? <Pill tone="info" outline style={{ borderColor:'var(--admin-row-prel-border)', color:'var(--admin-info-fg)' }}>Prel</Pill> : <span className="muted">—</span>}</td>
+              <td className="t-mono-cell muted">{fmtDate(o.createdAt)}</td>
+            </tr>;
+          })}
+        </tbody>
+      </table>}
+    </div>
+    {data && data.total > PER_PAGE && <Pager page={page} pages={pages} total={data.total} perPage={PER_PAGE} onPage={setPage} />}
+    <OrderDetailDrawer shopifyId={openId} open={!!openId} onClose={() => setOpenId(null)} />
+  </div>;
+}
+
+/* ── Clients page ── */
+function ClientsPage() {
+  const [clients, setClients] = useState(null);
+  const [err, setErr] = useState(null);
+  const [q, setQ] = useState('');
+  const [openId, setOpenId] = useState(null);
+  const [showNew, setShowNew] = useState(false);
+  const [newForm, setNewForm] = useState({});
+  const [newErr, setNewErr] = useState('');
+  const [newLoading, setNewLoading] = useState(false);
+
+  const load = () => apiFetch('/v1/admin/clients').then(setClients).catch(e => setErr(e.message));
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    if (!clients) return [];
+    if (!q.trim()) return clients;
+    const ql = q.toLowerCase();
+    return clients.filter(c => c.name.toLowerCase().includes(ql) || c.emailDomain.toLowerCase().includes(ql));
+  }, [clients, q]);
+
+  const openClient = clients ? clients.find(c => c.id === openId) : null;
+
+  const submitNew = async e => {
+    e.preventDefault();
+    setNewLoading(true); setNewErr('');
+    try {
+      await apiFetch('/v1/admin/clients', { method:'POST', body: JSON.stringify(newForm) });
+      setShowNew(false); setNewForm({});
+      load();
+    } catch(err) {
+      setNewErr(err.message === 'conflict' ? 'Domänen finns redan registrerad.' : err.message);
+    } finally { setNewLoading(false); }
+  };
+
+  if (err) return <div className="admin-page"><div style={{ padding:40, color:'var(--admin-danger-fg)' }}>{err}</div></div>;
+  if (!clients) return <div className="admin-page"><div className="page-loading"><span className="spinner" /></div></div>;
+
+  return <div className="admin-page">
+    <div className="admin-page__head">
+      <div><h1 className="admin-page__title">Kunder</h1><p className="admin-page__subtitle">{clients.length} aktiva kunder</p></div>
+      <button className="btn btn--primary" onClick={() => setShowNew(true)}>{I.plus}<span>Ny kund</span></button>
+    </div>
+    <div className="toolbar">
+      <div className="input-wrap" style={{ flex:'1 1 320px', maxWidth:360 }}>
+        {I.search}
+        <input className="input input--with-icon" placeholder="Sök kundnamn eller domän…" value={q} onChange={e => setQ(e.target.value)} style={{ width:'100%' }} />
+      </div>
+    </div>
+    <div className="table-wrap" style={{ borderRadius:'0 0 8px 8px' }}>
+      <table className="t-table" style={{ borderRadius:0 }}>
+        <thead><tr><th>Kund</th><th>Domän</th><th>Fakturasynlighet</th><th style={{ textAlign:'right' }}>Kreditgräns</th></tr></thead>
+        <tbody>
+          {filtered.length === 0 ? <tr><td colSpan={4} className="empty-state">Inga kunder matchar.</td></tr> :
+          filtered.map(c => <tr key={c.id} onClick={() => setOpenId(c.id)}>
+            <td><div className="row" style={{ gap:10 }}>
+              <span style={{ width:24, height:24, borderRadius:4, background: c.brandColor || 'var(--stakk-indigo-500)', color:'#fff', display:'grid', placeItems:'center', fontSize:11, fontWeight:700 }}>{c.name[0]}</span>
+              <span style={{ fontWeight:600 }}>{c.name}</span>
+            </div></td>
+            <td className="t-mono-cell muted">{c.emailDomain}</td>
+            <td>{c.invoiceVisibility ? <Pill tone="success" dot>Synlig</Pill> : <Pill tone="neutral">Dold</Pill>}</td>
+            <td className="t-num">{c.creditLimitSek ? fmtSek(c.creditLimitSek) : <span className="muted">—</span>}</td>
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    {openClient && <ClientDetailDrawer client={openClient} open={!!openClient} onClose={() => setOpenId(null)} onReload={load} />}
+    <Modal open={showNew} onClose={() => setShowNew(false)} title="Ny kund" subtitle="Skapa en organisation" footer={<>
+      <button className="btn btn--ghost" onClick={() => setShowNew(false)}>Avbryt</button>
+      <button className="btn btn--primary" disabled={newLoading} onClick={submitNew}>{newLoading ? 'Skapar…' : 'Skapa kund'}</button>
+    </>}>
+      {newErr && <div style={{ padding:10, background:'var(--admin-danger-bg)', color:'var(--admin-danger-fg)', borderRadius:6, fontSize:12 }}>{newErr}</div>}
+      {[['name','Kundnamn','Nordica AB'],['email_domain','E-postdomän','nordica.se'],['customer_email','Kontakt-e-post','orders@nordica.se'],
+        ['customer_first_name','Förnamn',''],['customer_last_name','Efternamn',''],['customer_company','Företag (Shopify)',''],
+        ['billing_first_name','Fakt förnamn',''],['billing_last_name','Fakt efternamn',''],['billing_company','Fakt företag',''],
+        ['billing_address1','Adress',''],['billing_city','Stad',''],['billing_zip','Postnummer',''],['billing_country','Land','SE']
+      ].map(([k,label,ph]) => <label key={k} className="stack-sm"><span className="section-label">{label}</span>
+        <input className="input" placeholder={ph} value={newForm[k]||''} onChange={e => setNewForm(f => ({...f,[k]:e.target.value}))} style={{ width:'100%' }} />
+      </label>)}
+    </Modal>
+  </div>;
+}
+
+function ClientDetailDrawer({ client, open, onClose, onReload }) {
+  const [tab, setTab] = useState('info');
+  const [detail, setDetail] = useState(null);
+  const [showNewKey, setShowNewKey] = useState(false);
+  const [newKeyLabel, setNewKeyLabel] = useState('');
+  const [newKeyResult, setNewKeyResult] = useState(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteResult, setInviteResult] = useState(null);
+
+  useEffect(() => {
+    if (open && client) { setTab('info'); setDetail(null); setNewKeyResult(null); setInviteResult(null);
+      apiFetch(`/v1/admin/clients/${client.id}`).then(setDetail).catch(() => {}); }
+  }, [open, client?.id]);
+
+  const createKey = async () => {
+    if (!newKeyLabel.trim()) return;
+    try {
+      const r = await apiFetch(`/v1/admin/clients/${client.id}/api-keys`, { method:'POST', body: JSON.stringify({ label: newKeyLabel }) });
+      setNewKeyResult(r.key || r.apiKey || '—');
+      apiFetch(`/v1/admin/clients/${client.id}`).then(setDetail).catch(() => {});
+    } catch(e) { alert(e.message); }
+  };
+  const revokeKey = async (keyId) => {
+    if (!confirm('Återkalla API-nyckel?')) return;
+    await apiFetch(`/v1/admin/clients/${client.id}/api-keys/${keyId}`, { method:'DELETE' }).catch(e => alert(e.message));
+    apiFetch(`/v1/admin/clients/${client.id}`).then(setDetail).catch(() => {});
+  };
+  const invite = async () => {
+    if (!inviteEmail.trim()) return;
+    try {
+      const r = await apiFetch(`/v1/admin/clients/${client.id}/users`, { method:'POST', body: JSON.stringify({ email: inviteEmail }) });
+      const url = `${location.origin}/portal/orders.html?invite=${r.inviteToken}`;
+      setInviteResult(url);
+      setInviteEmail('');
+      apiFetch(`/v1/admin/clients/${client.id}`).then(setDetail).catch(() => {});
+    } catch(e) { alert(e.message === 'email_already_exists' ? 'E-postadressen finns redan.' : e.message); }
+  };
+  const removeUser = async (userId, email) => {
+    if (!confirm(`Ta bort "${email}"?`)) return;
+    await apiFetch(`/v1/admin/clients/${client.id}/users/${userId}`, { method:'DELETE' }).catch(e => alert(e.message));
+    apiFetch(`/v1/admin/clients/${client.id}`).then(setDetail).catch(() => {});
+  };
+
+  const keys = detail?.apiKeys || [];
+  const users = detail?.users || [];
+  return <Drawer open={open} onClose={onClose} title={<span className="row" style={{ gap:10 }}>
+    <span style={{ width:24, height:24, borderRadius:4, background: client?.brandColor || 'var(--stakk-indigo-500)', color:'#fff', display:'grid', placeItems:'center', fontSize:11, fontWeight:700 }}>{client?.name[0]}</span>
+    {client?.name}
+  </span>} subtitle={`${client?.emailDomain}`} footer={<>
+    <button className="btn btn--ghost">{I.external}<span>Öppna kundsidan</span></button>
+  </>}>
+    <Tabs tabs={[{ id:'info', label:'Info' },{ id:'keys', label:`API-nycklar (${keys.length})` },{ id:'users', label:`Portalanvändare (${users.length})` }]} value={tab} onChange={setTab} />
+    {tab === 'info' && <div className="stack-md"><div className="card"><div className="card__head"><h3 className="card__title">Organisation</h3></div>
+      <div className="card__body"><dl className="dl">
+        <dt>Kundnamn</dt><dd>{client?.name}</dd>
+        <dt>E-postdomän</dt><dd className="t-mono-cell">{client?.emailDomain}</dd>
+        <dt>Kreditgräns</dt><dd className="t-mono-cell">{client?.creditLimitSek ? fmtSek(client.creditLimitSek) : '—'}</dd>
+        <dt>Fakturasynlighet</dt><dd>{client?.invoiceVisibility ? <Pill tone="success" dot>Synlig i portal</Pill> : <Pill tone="neutral">Dold</Pill>}</dd>
+        <dt>Webhook</dt><dd className="t-mono-cell" style={{ wordBreak:'break-all', fontSize:11 }}>{client?.webhookUrl || '—'}</dd>
+        <dt>Varumärkesfärg</dt><dd className="row" style={{ gap:8 }}><span style={{ width:18, height:18, borderRadius:4, background: client?.brandColor, border:'1px solid var(--admin-border)' }} /><span className="t-mono-cell">{client?.brandColor || '—'}</span></dd>
+        <dt>Skapad</dt><dd className="muted">{fmtDate(client?.createdAt)}</dd>
+      </dl></div></div></div>}
+    {tab === 'keys' && <div className="stack-md">
+      <div className="row" style={{ justifyContent:'flex-end', gap:8 }}>
+        <button className="btn btn--accent" onClick={() => { setNewKeyResult(null); setNewKeyLabel(''); setShowNewKey(true); }}>{I.plus}<span>Skapa ny nyckel</span></button>
+      </div>
+      <div className="card"><div className="card__body card__body--flush">
+        <table className="t-table"><thead><tr><th>Prefix</th><th>Etikett</th><th>Senast använd</th><th>Skapad</th><th></th></tr></thead>
+        <tbody>{keys.length === 0 ? <tr><td colSpan={5} className="empty-state">Inga aktiva nycklar.</td></tr> :
+          keys.filter(k => !k.revokedAt).map(k => <tr key={k.id} style={{ cursor:'default' }}>
+            <td className="t-mono-cell">{k.prefix}…</td>
+            <td>{k.label}</td>
+            <td className="muted t-mono-cell">{k.lastUsedAt ? fmtDate(k.lastUsedAt) : '—'}</td>
+            <td className="muted t-mono-cell">{fmtDate(k.createdAt)}</td>
+            <td><button className="btn btn--ghost btn--sm btn--danger" onClick={() => revokeKey(k.id)}>Återkalla</button></td>
+          </tr>)}
+        </tbody></table>
+      </div></div>
+      <Modal open={showNewKey} onClose={() => setShowNewKey(false)} title={newKeyResult ? 'Nyckel skapad' : 'Skapa ny API-nyckel'} subtitle={newKeyResult ? 'Spara denna nyckel — den visas bara en gång.' : 'Ge nyckeln en etikett.'} footer={newKeyResult ? <button className="btn btn--primary" onClick={() => setShowNewKey(false)}>Klar</button> : <>
+        <button className="btn btn--ghost" onClick={() => setShowNewKey(false)}>Avbryt</button>
+        <button className="btn btn--accent" onClick={createKey}>Skapa nyckel</button>
+      </>}>
+        {newKeyResult ? <>
+          <div style={{ display:'flex', alignItems:'center', gap:8, padding:12, background:'var(--admin-warning-bg)', color:'var(--admin-warning-fg)', borderRadius:6, fontSize:12 }}>{I.warning}<span>Nyckeln visas inte igen.</span></div>
+          <div className="stack-sm"><span className="section-label">Nyckel</span>
+            <div style={{ display:'flex', gap:8 }}><input className="input t-mono-cell" readOnly value={newKeyResult} style={{ flex:1, fontSize:11 }} /><button className="btn" onClick={() => navigator.clipboard.writeText(newKeyResult)}>{I.copy}<span>Kopiera</span></button></div>
+          </div>
+        </> : <label className="stack-sm"><span className="section-label">Etikett</span><input className="input" placeholder="t.ex. Production, ERP bridge" value={newKeyLabel} onChange={e => setNewKeyLabel(e.target.value)} autoFocus /></label>}
+      </Modal>
+    </div>}
+    {tab === 'users' && <div className="stack-md">
+      <div className="row" style={{ justifyContent:'flex-end' }}>
+        <button className="btn btn--accent" onClick={() => { setInviteResult(null); setShowInvite(true); }}>{I.plus}<span>Bjud in användare</span></button>
+      </div>
+      <div className="card"><div className="card__body card__body--flush">
+        <table className="t-table"><thead><tr><th>E-post</th><th>Status</th><th>Senaste inloggning</th><th>Skapad</th><th></th></tr></thead>
+        <tbody>{users.length === 0 ? <tr><td colSpan={5} className="empty-state">Inga användare.</td></tr> :
+          users.map(u => <tr key={u.id} style={{ cursor:'default' }}>
+            <td className="t-mono-cell">{u.email}</td>
+            <td>{u.hasPassword ? <Pill tone="success" dot>Aktiv</Pill> : <Pill tone="warning" dot>Inbjuden</Pill>}</td>
+            <td className="muted t-mono-cell">{u.lastLoginAt ? fmtDate(u.lastLoginAt) : '—'}</td>
+            <td className="muted t-mono-cell">{fmtDate(u.createdAt)}</td>
+            <td><button className="btn btn--ghost btn--sm btn--danger" onClick={() => removeUser(u.id, u.email)}>Ta bort</button></td>
+          </tr>)}
+        </tbody></table>
+      </div></div>
+      <Modal open={showInvite} onClose={() => setShowInvite(false)} title="Bjud in portalanvändare" subtitle={`Skapar inbjudningslänk för ${client?.name}`} footer={<>
+        <button className="btn btn--ghost" onClick={() => setShowInvite(false)}>Avbryt</button>
+        <button className="btn btn--primary" onClick={invite}>Skicka inbjudan</button>
+      </>}>
+        {inviteResult ? <>
+          <div style={{ padding:10, background:'var(--admin-success-bg)', color:'var(--admin-success-fg)', borderRadius:6, fontSize:12 }}>✓ Inbjudan skapad</div>
+          <div className="stack-sm"><span className="section-label">Länk</span>
+            <div style={{ display:'flex', gap:8 }}><input className="input t-mono-cell" readOnly value={inviteResult} style={{ flex:1, fontSize:11 }} /><button className="btn" onClick={() => navigator.clipboard.writeText(inviteResult)}>{I.copy}</button></div>
+          </div>
+        </> : <label className="stack-sm"><span className="section-label">E-postadress</span><input className="input" placeholder={`namn@${client?.emailDomain}`} value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} autoFocus /></label>}
+      </Modal>
+    </div>}
+  </Drawer>;
+}
+
+/* ── Reports ── */
+function ReportsPage({ subroute, onNavigate }) {
+  const tab = subroute || 'sales';
+  return <div className="admin-page">
+    <div className="admin-page__head"><div><h1 className="admin-page__title">Rapporter</h1><p className="admin-page__subtitle">Försäljning, lager och SKU-prestanda</p></div></div>
+    <Tabs tabs={[{ id:'sales', label:'Försäljning' },{ id:'inventory', label:'Lager (live)' },{ id:'skus', label:'SKU-prestanda' }]} value={tab} onChange={id => onNavigate(`reports/${id}`)} />
+    {tab === 'sales' && <SalesReport />}
+    {tab === 'inventory' && <InventoryReport />}
+    {tab === 'skus' && <SkuReport />}
+  </div>;
+}
+
+function SalesReport() {
+  const [days, setDays] = useState(90);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  useEffect(() => { setData(null); apiFetch(`/v1/admin/reports/sales?days=${days}`).then(setData).catch(e => setErr(e.message)); }, [days]);
+  if (err) return <div style={{ padding:20, color:'var(--admin-danger-fg)' }}>{err}</div>;
+  if (!data) return <div className="page-loading"><span className="spinner" /></div>;
+  const s = data.summary;
+  const maxRev = data.topProducts[0]?.revenueSek || 1;
+  return <div className="stack-lg">
+    <div className="row" style={{ gap:8 }}>
+      <span className="section-label">Period</span>
+      {[30,90,180,365].map(d => <button key={d} className={`chip-toggle ${days===d?'chip-toggle--on':''}`} onClick={() => setDays(d)}>{d} dagar</button>)}
+    </div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
+      <KCard label={`Ordrar (${days}d)`} value={fmtInt(s.totalOrders)} />
+      <KCard label={`Omsättning (${days}d)`} value={fmtSek(s.totalRevenueSek)} />
+      <KCard label="Snittordervärde" value={s.totalOrders > 0 ? fmtSek(Math.round(s.totalRevenueSek / s.totalOrders)) : '—'} />
+      <KCard label="Period" value={data.period.from} sub={`→ ${data.period.to}`} />
+    </div>
+    <div className="card">
+      <div className="card__head"><h3 className="card__title">Per kund</h3></div>
+      <div className="card__body card__body--flush"><table className="t-table"><thead><tr>
+        <th>Kund</th><th>Domän</th><th style={{ textAlign:'right' }}>Ordrar</th><th style={{ textAlign:'right' }}>Omsättning</th><th>Senaste order</th>
+      </tr></thead><tbody>
+        {data.byClient.map(c => <tr key={c.emailDomain} style={{ cursor:'default' }}>
+          <td style={{ fontWeight:600 }}>{c.clientName || '—'}</td>
+          <td className="t-mono-cell muted">{c.emailDomain}</td>
+          <td className="t-num">{fmtInt(c.orderCount)}</td>
+          <td className="t-num" style={{ fontWeight:600 }}>{fmtSek(c.revenueSek)}</td>
+          <td className="t-mono-cell muted">{fmtDate(c.lastOrderAt)}</td>
+        </tr>)}
+      </tbody></table></div>
+    </div>
+    <div className="card">
+      <div className="card__head"><h3 className="card__title">Topp {data.topProducts.length} produkter</h3></div>
+      <div className="card__body card__body--flush"><table className="t-table"><thead><tr>
+        <th>SKU</th><th>Produkt</th><th style={{ textAlign:'right' }}>Sålda</th><th style={{ textAlign:'right' }}>Omsättning</th><th style={{ width:'25%' }}>Relativ</th>
+      </tr></thead><tbody>
+        {data.topProducts.map(p => <tr key={p.sku || p.title} style={{ cursor:'default' }}>
+          <td className="t-mono-cell">{p.sku || '—'}</td>
+          <td>{p.title}</td>
+          <td className="t-num">{fmtInt(p.unitsSold)}</td>
+          <td className="t-num" style={{ fontWeight:600 }}>{fmtSek(p.revenueSek)}</td>
+          <td><div style={{ height:10, background:'var(--admin-neutral-bg)', borderRadius:999, overflow:'hidden', maxWidth:280 }}>
+            <div style={{ height:'100%', width:`${(p.revenueSek/maxRev)*100}%`, background:'var(--stakk-indigo-500)' }} />
+          </div></td>
+        </tr>)}
+      </tbody></table></div>
+    </div>
+  </div>;
+}
+
+function InventoryReport() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [sort, toggleSort] = useSort('wmsQty', 'asc');
+  useEffect(() => { apiFetch('/v1/admin/reports/inventory').then(setData).catch(e => setErr(e.message)); }, []);
+  if (err) return <div style={{ padding:20, color:'var(--admin-danger-fg)' }}>{err}</div>;
+  if (!data) return <div className="page-loading"><span className="spinner" /></div>;
+  const s = data.summary;
+  const variants = (filter === 'all' ? data.variants : data.variants.filter(v => v.status === filter)).sort((a,b) => {
+    const va = a[sort.key] ?? 0, vb = b[sort.key] ?? 0;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return typeof va === 'number' ? (va - vb) * dir : String(va).localeCompare(String(vb), 'sv') * dir;
+  });
+  function StockPill({ status }) {
+    if (status === 'out_of_stock') return <Pill tone="danger" dot>Slut</Pill>;
+    if (status === 'low_stock') return <Pill tone="warning" dot>Lågt</Pill>;
+    return <Pill tone="success" dot>I lager</Pill>;
+  }
+  return <div className="stack-lg">
+    <div className="row" style={{ gap:12, justifyContent:'space-between' }}>
+      <div className="row" style={{ gap:16 }}>
+        <div className="row" style={{ gap:6 }}><span className="dot-status dot-status--ok" /><span className="muted">I lager</span><strong style={{ fontFamily:'var(--font-mono)' }}>{s.inStock}</strong></div>
+        <div className="row" style={{ gap:6 }}><span className="dot-status dot-status--warn" /><span className="muted">Lågt</span><strong style={{ fontFamily:'var(--font-mono)' }}>{s.lowStock}</strong></div>
+        <div className="row" style={{ gap:6 }}><span className="dot-status dot-status--err" /><span className="muted">Slut</span><strong style={{ fontFamily:'var(--font-mono)' }}>{s.outOfStock}</strong></div>
+      </div>
+      {data.wmsConnected && <Pill tone="success" dot>Ongoing WMS · Ansluten</Pill>}
+    </div>
+    <div className="toolbar">
+      {[['all','Alla'],['in_stock','I lager'],['low_stock','Lågt'],['out_of_stock','Slut']].map(([id,label]) => <button key={id} className={`chip-toggle ${filter===id?'chip-toggle--on':''}`} onClick={() => setFilter(id)}>{label}</button>)}
+    </div>
+    <div className="table-wrap" style={{ border:'1px solid var(--admin-border)', borderTop:0, borderRadius:'0 0 8px 8px' }}>
+      <table className="t-table" style={{ borderRadius:0 }}><thead><tr>
+        <SortableTh label="Produkt" sortKey="productTitle" sort={sort} onSort={toggleSort} />
+        <SortableTh label="SKU" sortKey="sku" sort={sort} onSort={toggleSort} />
+        <SortableTh label="Pris" sortKey="price" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="Shopify qty" sortKey="shopifyQty" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="WMS qty" sortKey="wmsQty" sort={sort} onSort={toggleSort} align="right" />
+        <th>Status</th><th>Inkommande</th>
+      </tr></thead><tbody>
+        {variants.map(v => <tr key={v.sku || v.variantId} style={{ cursor:'default' }}>
+          <td>{v.productTitle}{v.variantTitle && v.variantTitle !== 'Default Title' ? <span className="muted" style={{ fontSize:11 }}> · {v.variantTitle}</span> : ''}</td>
+          <td className="t-mono-cell">{v.sku || '—'}</td>
+          <td className="t-num">{v.price != null ? fmtSek(v.price) : '—'}</td>
+          <td className="t-num">{fmtInt(v.shopifyQty)}</td>
+          <td className="t-num" style={{ fontWeight:600 }}>{v.wmsQty != null ? fmtInt(v.wmsQty) : <span className="muted">—</span>}</td>
+          <td><StockPill status={v.status} /></td>
+          <td>{v.nextInbound ? <div style={{ fontSize:12 }}><strong style={{ fontFamily:'var(--font-mono)' }}>+{v.nextInbound.qtyIncoming}</strong>{v.nextInbound.expectedDate ? ` · ${fmtDateShort(v.nextInbound.expectedDate)}` : ''}</div> : <span className="muted">—</span>}</td>
+        </tr>)}
+      </tbody></table>
+    </div>
+  </div>;
+}
+
+function SkuReport() {
+  const [days, setDays] = useState(90);
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [hFilter, setHFilter] = useState('all');
+  const [sort, toggleSort] = useSort('revenue', 'desc');
+  useEffect(() => { setData(null); apiFetch(`/v1/admin/reports/sku-performance?days=${days}`).then(setData).catch(e => setErr(e.message)); }, [days]);
+  if (err) return <div style={{ padding:20, color:'var(--admin-danger-fg)' }}>{err}</div>;
+  if (!data) return <div className="page-loading"><span className="spinner" /></div>;
+  const s = data.summary;
+  const hOrder = { critical:0, reorder:1, healthy:2, no_sales:3 };
+  const skus = (hFilter === 'all' ? data.skus : data.skus.filter(s => s.health === hFilter)).sort((a,b) => {
+    const sortMap = { revenue: [a.revenueSek, b.revenueSek], unitsSold: [a.unitsSold, b.unitsSold], velocity: [a.velocity, b.velocity], wmsQty: [a.currentStock, b.currentStock], daysOfStock: [a.daysOfStock??9999, b.daysOfStock??9999], health: [hOrder[a.health]??2, hOrder[b.health]??2] };
+    const [va, vb] = sortMap[sort.key] || [0,0];
+    return sort.dir === 'asc' ? va - vb : vb - va;
+  });
+  function HealthPill({ h }) {
+    if (h === 'critical') return <Pill tone="danger" dot>Kritisk</Pill>;
+    if (h === 'reorder') return <Pill tone="warning" dot>Beställ</Pill>;
+    if (h === 'no_sales') return <Pill tone="neutral" dot>Ingen försäljning</Pill>;
+    return <Pill tone="success" dot>Frisk</Pill>;
+  }
+  function daysChip(d) {
+    if (!d && d !== 0) return <span className="muted">∞</span>;
+    const tone = d < 14 ? 'danger' : d < 30 ? 'warning' : 'success';
+    return <Pill tone={tone}>{d}d</Pill>;
+  }
+  return <div className="stack-lg">
+    <div className="row" style={{ gap:8 }}>
+      <span className="section-label">Period</span>
+      {[30,90,180,365].map(d => <button key={d} className={`chip-toggle ${days===d?'chip-toggle--on':''}`} onClick={() => setDays(d)}>{d} dagar</button>)}
+    </div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
+      <KCard label="Kritisk" value={fmtInt(s.critical)} sub="< 14 dgr lager" />
+      <KCard label="Beställ" value={fmtInt(s.reorder)} sub="< 30 dgr lager" />
+      <KCard label="Frisk" value={fmtInt(s.healthy)} />
+      <KCard label="Ingen försäljning" value={fmtInt(s.noSales)} sub={`${days} dagar`} />
+    </div>
+    <div className="toolbar">
+      {[['all','Alla'],['critical','Kritisk'],['reorder','Beställ'],['healthy','Frisk'],['no_sales','Ingen försäljning']].map(([id,label]) => <button key={id} className={`chip-toggle ${hFilter===id?'chip-toggle--on':''}`} onClick={() => setHFilter(id)}>{label}</button>)}
+    </div>
+    <div className="table-wrap" style={{ border:'1px solid var(--admin-border)', borderTop:0, borderRadius:'0 0 8px 8px' }}>
+      <table className="t-table" style={{ borderRadius:0 }}><thead><tr>
+        <SortableTh label="SKU" sortKey="sku" sort={sort} onSort={toggleSort} />
+        <th>Produkt</th>
+        <SortableTh label="Sålda" sortKey="unitsSold" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="Omsättning" sortKey="revenue" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="Velocity" sortKey="velocity" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="Lager" sortKey="wmsQty" sort={sort} onSort={toggleSort} align="right" />
+        <SortableTh label="Dagar kvar" sortKey="daysOfStock" sort={sort} onSort={toggleSort} align="right" />
+        <th>Hälsa</th><th>Inkommande</th>
+      </tr></thead><tbody>
+        {skus.length === 0 ? <tr><td colSpan={9} className="empty-state">Inga SKU matchar.</td></tr> :
+        skus.map(s => <tr key={s.sku} style={{ cursor:'default' }}>
+          <td className="t-mono-cell">{s.sku}</td>
+          <td>{s.productTitle}{s.variantTitle && s.variantTitle !== 'Default Title' ? <span className="muted" style={{ fontSize:11 }}> · {s.variantTitle}</span> : ''}</td>
+          <td className="t-num">{fmtInt(s.unitsSold)}</td>
+          <td className="t-num" style={{ fontWeight:600 }}>{fmtSek(s.revenueSek)}</td>
+          <td className="t-num">{s.velocity > 0 ? `${s.velocity.toFixed(2)}/d` : <span className="muted">—</span>}</td>
+          <td className="t-num">{fmtInt(s.currentStock ?? s.wmsQty)}</td>
+          <td className="t-num">{daysChip(s.daysOfStock)}</td>
+          <td><HealthPill h={s.health} /></td>
+          <td>{s.nextInbound ? <span style={{ fontSize:12 }}><strong style={{ fontFamily:'var(--font-mono)' }}>+{s.nextInbound.qtyIncoming}</strong>{s.nextInbound.expectedDate ? ` · ${fmtDateShort(s.nextInbound.expectedDate)}` : ''}</span> : <span className="muted">—</span>}</td>
+        </tr>)}
+      </tbody></table>
+    </div>
+  </div>;
+}
+
+/* ── Audit ── */
+function AuditPage() {
+  const PER_PAGE = 50;
+  const [page, setPage] = useState(1);
+  const [clientFilter, setClientFilter] = useState('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [data, setData] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [err, setErr] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { apiFetch('/v1/admin/clients').then(setClients).catch(() => {}); }, []);
+
+  const load = useCallback((resetPage = false) => {
+    const pg = resetPage ? 1 : page;
+    if (resetPage) setPage(1);
+    setLoading(true); setErr(null);
+    const params = new URLSearchParams({ limit: PER_PAGE, offset: (pg-1)*PER_PAGE });
+    if (clientFilter !== 'all') params.set('clientId', clientFilter);
+    if (from) params.set('startDate', from);
+    if (to) params.set('endDate', to);
+    apiFetch('/v1/admin/audit?' + params).then(setData).catch(e => setErr(e.message)).finally(() => setLoading(false));
+  }, [page, clientFilter, from, to]);
+
+  useEffect(() => { load(true); }, [clientFilter, from, to]);
+  useEffect(() => { load(false); }, [page]);
+
+  const clientMap = useMemo(() => Object.fromEntries(clients.map(c => [c.id, c.name])), [clients]);
+  const pages = data ? Math.max(1, Math.ceil(data.total / PER_PAGE)) : 1;
+
+  return <div className="admin-page">
+    <div className="admin-page__head">
+      <div><h1 className="admin-page__title">Audit Log</h1><p className="admin-page__subtitle">API-anrop · {data ? `${fmtInt(data.total)} loggrader` : '…'}</p></div>
+    </div>
+    <div className="toolbar">
+      <select className="select" value={clientFilter} onChange={e => setClientFilter(e.target.value)}>
+        <option value="all">Alla kunder</option>
+        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+      <div className="row" style={{ gap:4 }}>
+        <span style={{ fontSize:11, color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'.06em' }}>Period</span>
+        <input className="input" type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ width:130 }} />
+        <span className="muted">–</span>
+        <input className="input" type="date" value={to} onChange={e => setTo(e.target.value)} style={{ width:130 }} />
+      </div>
+    </div>
+    <div className="table-wrap">
+      {loading ? <div className="page-loading"><span className="spinner" /></div> :
+      err ? <div style={{ padding:20, color:'var(--admin-danger-fg)' }}>{err}</div> :
+      <table className="t-table" style={{ borderRadius:0 }}><thead><tr>
+        <th>Tidsstämpel</th><th>Kund</th><th>Metod</th><th>Sökväg</th>
+        <th style={{ textAlign:'right' }}>Status</th><th style={{ textAlign:'right' }}>Tid</th><th>IP</th>
+      </tr></thead><tbody>
+        {!data || data.rows.length === 0 ? <tr><td colSpan={7} className="empty-state">Inga loggrader matchar.</td></tr> :
+        data.rows.map(r => {
+          const statusTone = r.status_code >= 500 ? 'danger' : r.status_code >= 400 ? 'warning' : 'success';
+          return <tr key={r.id} style={{ cursor:'default' }}>
+            <td className="t-mono-cell muted">{r.created_at ? r.created_at.slice(0,19).replace('T',' ') : '—'}</td>
+            <td>{clientMap[r.client_id] || `#${r.client_id}`}</td>
+            <td><Pill tone={r.method === 'POST' ? 'info' : 'neutral'} outline><span style={{ fontFamily:'var(--font-mono)', fontWeight:600 }}>{r.method}</span></Pill></td>
+            <td className="t-mono-cell">{r.path}</td>
+            <td style={{ textAlign:'right' }}><Pill tone={statusTone}><span style={{ fontFamily:'var(--font-mono)' }}>{r.status_code}</span></Pill></td>
+            <td className="t-num" style={{ color: r.duration_ms > 1000 ? 'var(--admin-danger-fg)' : 'inherit' }}>{r.duration_ms} ms</td>
+            <td className="t-mono-cell muted">{r.ip_address}</td>
+          </tr>;
+        })}
+      </tbody></table>}
+    </div>
+    {data && data.total > PER_PAGE && <Pager page={page} pages={pages} total={data.total} perPage={PER_PAGE} onPage={setPage} />}
+  </div>;
+}
+
+/* ── Sync modals ── */
+function SyncOrderModal({ open, onClose }) {
+  const [orderId, setOrderId] = useState('');
+  const [step, setStep] = useState(0); // 0 idle, 1 running, 2 done
+  const [result, setResult] = useState(null);
+  function close() { setOrderId(''); setStep(0); setResult(null); onClose(); }
+  async function run() {
+    if (!orderId.trim()) return;
+    setStep(1);
+    try {
+      const r = await apiFetch(`/v1/admin/sync-order/${orderId.trim()}`, { method:'POST' });
+      setResult(r); setStep(2);
+    } catch(e) { alert(e.message); setStep(0); }
+  }
+  return <Modal open={open} onClose={close} title="Synka Fortnox-order" subtitle="Triggar Fortnox-sync för en specifik order." footer={step === 2 ? <button className="btn btn--primary" onClick={close}>Klar</button> : <>
+    <button className="btn btn--ghost" onClick={close} disabled={step===1}>Avbryt</button>
+    <button className="btn btn--accent" disabled={!orderId.trim() || step===1} onClick={run}>{step===1 ? 'Synkar…' : 'Synka order'}</button>
+  </>}>
+    {step === 2 ? <div style={{ display:'flex', gap:10, padding:12, background:'var(--admin-success-bg)', color:'var(--admin-success-fg)', borderRadius:6, fontSize:13 }}>{I.check}<span>Order synkad!</span></div> :
+    <label className="stack-sm"><span className="section-label">Shopify order-ID eller ordernummer</span>
+      <input className="input t-mono-cell" placeholder="6312345678901 eller #2287" value={orderId} onChange={e => setOrderId(e.target.value)} autoFocus />
+      <div className="muted" style={{ fontSize:12 }}>Triggar Fortnox-fakturering. Webhooks triggas inte.</div>
+    </label>}
+  </Modal>;
+}
+function SyncInventoryModal({ open, onClose }) {
+  const [step, setStep] = useState(0);
+  function close() { setStep(0); onClose(); }
+  async function run() {
+    setStep(1);
+    try { await apiFetch('/v1/admin/sync-ongoing-inventory', { method:'POST' }); setStep(2); }
+    catch(e) { alert(e.message); setStep(0); }
+  }
+  return <Modal open={open} onClose={close} title="Synka Ongoing-lager" subtitle="Pullar färsk WMS-snapshot." footer={step === 2 ? <button className="btn btn--primary" onClick={close}>Klar</button> : <>
+    <button className="btn btn--ghost" onClick={close} disabled={step===1}>Avbryt</button>
+    <button className="btn btn--accent" onClick={run} disabled={step===1}>{step===1 ? 'Synkar…' : 'Starta sync'}</button>
+  </>}>
+    {step === 1 && <div style={{ padding:12, background:'var(--admin-info-bg)', color:'var(--admin-info-fg)', borderRadius:6, fontSize:13 }}>Hämtar varianter från Ongoing… <span className="muted">~6 sek</span></div>}
+    {step === 2 && <div style={{ display:'flex', gap:10, padding:12, background:'var(--admin-success-bg)', color:'var(--admin-success-fg)', borderRadius:6, fontSize:13 }}>{I.check}<span>Lager synkat!</span></div>}
+    {step === 0 && <dl className="dl"><dt>Senaste sync</dt><dd>Se Ongoing WMS</dd></dl>}
+  </Modal>;
+}
+function SyncOrdersModal({ open, onClose }) {
+  const [step, setStep] = useState(0);
+  const [result, setResult] = useState(null);
+  function close() { setStep(0); setResult(null); onClose(); }
+  async function run() {
+    setStep(1);
+    try { const r = await apiFetch('/v1/admin/sync-shopify-orders', { method:'POST' }); setResult(r); setStep(2); }
+    catch(e) { alert(e.message); setStep(0); }
+  }
+  return <Modal open={open} onClose={close} title="Synka Shopify-ordrar" subtitle="Inkrementell sync av ordercachen." footer={step === 2 ? <button className="btn btn--primary" onClick={close}>Klar</button> : <>
+    <button className="btn btn--ghost" onClick={close} disabled={step===1}>Avbryt</button>
+    <button className="btn btn--accent" onClick={run} disabled={step===1}>{step===1 ? 'Synkar…' : 'Starta sync'}</button>
+  </>}>
+    {step === 1 && <div className="stack-sm"><div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}><span className="muted">Hämtar ordrar…</span></div><div className="progress-bar-wrap"><div className="progress-bar-fill" style={{ width:'60%' }} /></div></div>}
+    {step === 2 && result && <div style={{ display:'flex', gap:10, padding:12, background:'var(--admin-success-bg)', color:'var(--admin-success-fg)', borderRadius:6, fontSize:13 }}>{I.check}<span>{result.synced ?? result.ordersCreated ?? '?'} ordrar synkade</span></div>}
+    {step === 0 && <p className="muted" style={{ fontSize:13 }}>Hämtar ordrar uppdaterade sedan senaste sync. Tar vanligtvis under 30 sekunder.</p>}
+  </Modal>;
+}
+
+/* ── App root ── */
+function parseHash() {
+  const h = (location.hash || '#dashboard').replace(/^#/, '');
+  const [head, sub] = h.split('/');
+  return { head: head || 'dashboard', sub: sub || '' };
+}
+
+function App() {
+  const [hash, setHash] = useState(parseHash());
+  const [sync, setSync] = useState(null);
+  const [openOrderId, setOpenOrderId] = useState(null);
+  useEffect(() => {
+    const fn = () => { setHash(parseHash()); window.scrollTo(0,0); };
+    window.addEventListener('hashchange', fn);
+    return () => window.removeEventListener('hashchange', fn);
+  }, []);
+  function navigate(path) { location.hash = path; }
+  const { head, sub } = hash;
+  const route = head + (sub ? `/${sub}` : '');
+  let navRoute = head;
+  if (head === 'reports' && sub) navRoute = `reports/${sub}`;
+  let crumbs = ['Stakk Admin'];
+  let body = null;
+  if (head === 'dashboard') {
+    crumbs = ['Stakk Admin', 'Översikt'];
+    body = <DashboardPage onNavigate={navigate} onOpenOrder={id => setOpenOrderId(id)} />;
+  } else if (head === 'orders') {
+    crumbs = ['Stakk Admin', 'Ordrar'];
+    body = <OrdersPage />;
+  } else if (head === 'clients') {
+    crumbs = ['Stakk Admin', 'Kunder'];
+    body = <ClientsPage />;
+  } else if (head === 'reports') {
+    const lbl = sub === 'inventory' ? 'Lager' : sub === 'skus' ? 'SKU-prestanda' : 'Försäljning';
+    crumbs = ['Stakk Admin', 'Rapporter', lbl];
+    body = <ReportsPage subroute={sub || 'sales'} onNavigate={navigate} />;
+  } else if (head === 'audit') {
+    crumbs = ['Stakk Admin', 'Audit Log'];
+    body = <AuditPage />;
+  } else {
+    body = <DashboardPage onNavigate={navigate} onOpenOrder={id => setOpenOrderId(id)} />;
+  }
+  return <div className="admin-shell">
+    <Rail route={navRoute} onNavigate={navigate} />
+    <div className="admin-main">
+      <TopBar crumbs={crumbs} onSync={setSync} />
+      {body}
+    </div>
+    {openOrderId && <OrderDetailDrawer shopifyId={openOrderId} open={!!openOrderId} onClose={() => setOpenOrderId(null)} />}
+    <SyncOrderModal open={sync === 'order'} onClose={() => setSync(null)} />
+    <SyncInventoryModal open={sync === 'inventory'} onClose={() => setSync(null)} />
+    <SyncOrdersModal open={sync === 'orders'} onClose={() => setSync(null)} />
+  </div>;
+}
+
+function boot() {
+  document.getElementById('root').style.display = 'block';
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+}
+
+window.__bootReact = boot;
+if (window.__adminKey) boot();
+</script>
+</body>
+</html>
