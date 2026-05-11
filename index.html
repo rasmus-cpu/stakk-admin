@@ -206,6 +206,28 @@
     /* Progress bar */
     .progress-bar-wrap{height:6px;background:var(--admin-border);border-radius:999px;overflow:hidden;}
     .progress-bar-fill{height:100%;background:var(--stakk-indigo-500);border-radius:999px;transition:width .2s;}
+    /* ── Hamburger (hidden on desktop) ── */
+    .admin-topbar__menu-btn{display:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;background:transparent;color:var(--color-text);border-radius:6px;cursor:pointer;flex:0 0 36px;}
+    .admin-topbar__menu-btn:hover{background:var(--admin-row-hover);}
+    .admin-rail-backdrop{display:none;position:fixed;inset:0;background:rgba(34,34,40,.45);z-index:199;}
+    /* ── Responsive — mobile (≤ 768 px) ── */
+    @media(max-width:768px){
+      #auth-screen form{width:calc(100% - 32px);max-width:380px;padding:28px 20px;}
+      .admin-shell{grid-template-columns:1fr;}
+      .admin-rail{position:fixed;top:0;bottom:0;left:calc(0px - var(--admin-rail-w) - 4px);width:var(--admin-rail-w);z-index:200;transition:left .22s var(--ease-out);}
+      .admin-shell.nav-open .admin-rail{left:0;box-shadow:var(--shadow-lg);}
+      .admin-shell.nav-open .admin-rail-backdrop{display:block;}
+      .admin-topbar__menu-btn{display:flex;}
+      .admin-topbar{padding:0 14px;gap:8px;}
+      .admin-topbar__search{display:none;}
+      .admin-page{padding:16px 14px 48px;}
+      .admin-page__head{flex-direction:column;align-items:flex-start;gap:12px;}
+      .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+      .drawer{width:min(540px,96vw);}
+      .k-card__value{font-size:20px;}
+      .dl{grid-template-columns:110px 1fr;}
+      .modal{margin:0 8px;}
+    }
   </style>
 </head>
 <body class="admin">
@@ -435,7 +457,7 @@ function SortableTh({ label, sortKey, sort, onSort, align = 'left', style }) {
 }
 
 /* ── Rail ── */
-function Rail({ route, onNavigate }) {
+function Rail({ route, onNavigate, onClose }) {
   const topItems = [
     { id: 'dashboard', label: 'Översikt', icon: I.dashboard },
     { id: 'orders', label: 'Ordrar', icon: I.orders },
@@ -448,7 +470,9 @@ function Rail({ route, onNavigate }) {
   ];
   const bottomItems = [{ id: 'audit', label: 'Audit Log', icon: I.audit }];
   const inReports = route.startsWith('reports');
-  return <aside className="admin-rail">
+  return <>
+    <div className="admin-rail-backdrop" onClick={onClose} />
+    <aside className="admin-rail">
     <div className="admin-rail__brand">
       <span className="admin-rail__brand-mark">S</span>
       <span>Stakk</span>
@@ -477,11 +501,12 @@ function Rail({ route, onNavigate }) {
         <div style={{ cursor:'pointer' }} onClick={() => { localStorage.removeItem('stakk_admin_key'); location.reload(); }}>Logga ut</div>
       </div>
     </div>
-  </aside>;
+  </aside>
+  </>;
 }
 
 /* ── TopBar ── */
-function TopBar({ crumbs, onSync }) {
+function TopBar({ crumbs, onSync, onMenuToggle }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -490,6 +515,9 @@ function TopBar({ crumbs, onSync }) {
     return () => document.removeEventListener('mousedown', fn);
   }, []);
   return <header className="admin-topbar">
+    <button className="admin-topbar__menu-btn" onClick={onMenuToggle} aria-label="Öppna meny">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
     <div className="admin-topbar__crumbs">
       {crumbs.map((c, i) => <React.Fragment key={i}>
         {i > 0 && <span style={{ opacity:.5 }}>/</span>}
@@ -1301,6 +1329,7 @@ function App() {
   const [hash, setHash] = useState(parseHash());
   const [sync, setSync] = useState(null);
   const [openOrderId, setOpenOrderId] = useState(null);
+  const [navOpen, setNavOpen] = useState(false);
   useEffect(() => {
     const fn = () => { setHash(parseHash()); window.scrollTo(0,0); };
     window.addEventListener('hashchange', fn);
@@ -1332,10 +1361,10 @@ function App() {
   } else {
     body = <DashboardPage onNavigate={navigate} onOpenOrder={id => setOpenOrderId(id)} />;
   }
-  return <div className="admin-shell">
-    <Rail route={navRoute} onNavigate={navigate} />
+  return <div className={`admin-shell${navOpen ? ' nav-open' : ''}`}>
+    <Rail route={navRoute} onNavigate={r => { navigate(r); setNavOpen(false); }} onClose={() => setNavOpen(false)} />
     <div className="admin-main">
-      <TopBar crumbs={crumbs} onSync={setSync} />
+      <TopBar crumbs={crumbs} onSync={setSync} onMenuToggle={() => setNavOpen(o => !o)} />
       {body}
     </div>
     {openOrderId && <OrderDetailDrawer shopifyId={openOrderId} open={!!openOrderId} onClose={() => setOpenOrderId(null)} />}
